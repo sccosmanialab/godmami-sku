@@ -151,6 +151,12 @@ nav { background: var(--surface); border-bottom: 1px solid var(--border); displa
       </div>
       <div id="variant-list"></div>
       <div class="hint" style="margin-top:6px;">เว้นว่างได้ถ้าไม่มี Sub-code — บาร์โค้ดจัดสรรแยกต่างหากแต่ละ variant</div>
+      <label style="display:flex; align-items:center; gap:10px; margin-top:12px; cursor:pointer; user-select:none;">
+        <input type="checkbox" id="inp-no-barcode"
+          style="width:18px; height:18px; accent-color:var(--pink); cursor:pointer; flex-shrink:0;"
+          onchange="updateVariantPreviews()" />
+        <span style="font-size:13.5px; color:var(--text-2);">ไม่ต้องการบาร์โค้ด — สร้างแค่ SKU Code</span>
+      </label>
     </div>
     <div id="variant-preview" style="background:var(--pink-light); border-radius:var(--radius); padding:14px 16px; margin:14px 0 0; display:none;">
       <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Preview SKU Codes</div>
@@ -586,9 +592,10 @@ async function saveSKU() {
   const subs = getVariantInputs();
   if (subs.length===0) { toast('กรุณาเพิ่ม Variant อย่างน้อย 1 รายการ','error'); return; }
 
-  // check barcode pool
+  // check barcode pool (ข้ามถ้าติ๊ก "ไม่ต้องการบาร์โค้ด")
+  const noBarcode = document.getElementById('inp-no-barcode').checked;
   const freeBCs = _barcodes.filter(b=>!b.used);
-  if (freeBCs.length < subs.length) {
+  if (!noBarcode && freeBCs.length < subs.length) {
     const msg = freeBCs.length===0
       ? `บาร์โค้ดหมดแล้ว! ต้องการ ${subs.length} แต่ Pool เหลือ 0`
       : `บาร์โค้ดไม่พอ — ต้องการ ${subs.length} แต่ว่างอยู่แค่ ${freeBCs.length}`;
@@ -620,17 +627,17 @@ async function saveSKU() {
   subs.forEach((sub,i) => {
     let sku = cat.prefix+seq;
     if (sub) sku+='-'+sub;
-    const bc = freeBCs[i];
+    const bc = noBarcode ? null : freeBCs[i];
     rows.push({
       id: Date.now().toString()+i,
       sku, name, catId, catName: cat.name, sub, seq,
-      barcode: bc.number,
-      bcViewUrl: bc.driveViewUrl||'',
-      bcDownloadUrl: bc.driveDownloadUrl||'',
-      bcFilename: bc.filename||'',
+      barcode: bc ? bc.number : '',
+      bcViewUrl: bc ? (bc.driveViewUrl||'') : '',
+      bcDownloadUrl: bc ? (bc.driveDownloadUrl||'') : '',
+      bcFilename: bc ? (bc.filename||'') : '',
       priceMRP, priceRRP, priceRRPCen, priceRRPOth, date
     });
-    usedBCs.push({ id: bc.id, sku });
+    if (bc) usedBCs.push({ id: bc.id, sku });
   });
 
   const btn = document.getElementById('btn-save');
@@ -661,6 +668,7 @@ function clearForm() {
     .forEach(id => document.getElementById(id).value='');
   document.getElementById('variant-preview').style.display='none';
   variantRows=[]; document.getElementById('variant-list').innerHTML='';
+  document.getElementById('inp-no-barcode').checked = false;
   addVariantRow();
 }
 
@@ -1007,12 +1015,21 @@ function toast(msg,type){
   const url=getScriptUrl();
   document.getElementById('api-banner').classList.toggle('show',!url);
   if(url){
-    try{
-      const r=await api('getSettings');
-      _categories=r.categories||[];
-      _loaded.settings=true;
-      populateCatDropdown();
-    }catch(e){ console.warn('init settings failed:',e.message); }
+    await Promise.allSettled([
+      api('getSettings').then(r=>{
+        _categories=r.categories||[];
+        _loaded.settings=true;
+        populateCatDropdown();
+      }).catch(e=>console.warn('settings:',e.message)),
+      api('getSkus').then(r=>{
+        _skus=r.rows||[];
+        _loaded.skus=true;
+      }).catch(e=>console.warn('skus:',e.message)),
+      api('getBarcodes').then(r=>{
+        _barcodes=r.rows||[];
+        _loaded.barcodes=true;
+      }).catch(e=>console.warn('barcodes:',e.message)),
+    ]);
   }
   addVariantRow();
 })();
