@@ -108,10 +108,10 @@ nav { background: var(--surface); border-bottom: 1px solid var(--border); displa
 
 <nav>
   <div class="nav-brand">Godmami <span>SKU</span></div>
-  <button class="nav-tab active" onclick="showPage('input')">➕ สร้าง SKU</button>
-  <button class="nav-tab" onclick="showPage('list')">📋 รายการ SKU</button>
-  <button class="nav-tab" onclick="showPage('barcodes')">🔢 Barcode Pool</button>
-  <button class="nav-tab" onclick="showPage('settings')">⚙️ ตั้งค่า</button>
+  <button class="nav-tab active" data-page="input" onclick="showPage(this.dataset.page)">➕ สร้าง SKU</button>
+  <button class="nav-tab" data-page="list" onclick="showPage(this.dataset.page)">📋 รายการ SKU</button>
+  <button class="nav-tab" data-page="barcodes" onclick="showPage(this.dataset.page)">🔢 Barcode Pool</button>
+  <button class="nav-tab" data-page="settings" onclick="showPage(this.dataset.page)">⚙️ ตั้งค่า</button>
 </nav>
 
 <!-- API NOT CONFIGURED BANNER -->
@@ -418,7 +418,10 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  // find matching tab by data attribute instead of event
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.dataset.page === id) t.classList.add('active');
+  });
   if (id === 'list')     loadSKUs();
   if (id === 'barcodes') loadBarcodes();
   if (id === 'settings') { renderSettingsUrl(); loadSettings(); }
