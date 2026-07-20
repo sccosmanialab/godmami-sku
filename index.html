@@ -997,4 +997,22 @@ function toast(msg,type){
   setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-// ═══════════════
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(async function init(){
+  const url=getScriptUrl();
+  document.getElementById('api-banner').classList.toggle('show',!url);
+  if(url){
+    try{
+      const r=await api('getSettings');
+      _categories=r.categories||[];
+      _loaded.settings=true;
+      populateCatDropdown();
+    }catch(e){ console.warn('init settings failed:',e.message); }
+  }
+  addVariantRow();
+})();
+</script>
+</body>
+</html>
