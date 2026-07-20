@@ -940,15 +940,29 @@ function removeCategory(idx){
 }
 
 async function saveSettings(){
+  if(!_categories||!_categories.length){toast('ไม่มีข้อมูลหมวดหมู่','error');return;}
+
+  // sync DOM values กลับเข้า _categories ก่อน
   document.querySelectorAll('.settings-row[data-idx]').forEach(row=>{
     const idx=parseInt(row.dataset.idx);
+    if(idx<0||idx>=_categories.length)return;
     const n=row.querySelector('[data-field="name"]');
     const p=row.querySelector('[data-field="prefix"]');
-    if(n)_categories[idx].name=n.value.trim()||_categories[idx].name;
-    if(p){_categories[idx].prefix=p.value.trim().toUpperCase()||_categories[idx].prefix; _categories[idx].id=_categories[idx].prefix;}
+    if(n&&n.value.trim())_categories[idx].name=n.value.trim();
+    if(p&&p.value.trim()){
+      _categories[idx].prefix=p.value.trim().toUpperCase();
+      _categories[idx].id=_categories[idx].prefix;
+    }
   });
+
   try{
-    await api('saveSettings',{categories:_categories});
+    const url=getScriptUrl();
+    if(!url){toast('ยังไม่ได้ตั้งค่า Script URL','error');return;}
+    const params=new URLSearchParams({action:'saveSettings',categories:JSON.stringify(_categories)});
+    const res=await fetch(url+'?'+params.toString());
+    const text=await res.text();
+    const data=JSON.parse(text);
+    if(data.status==='error')throw new Error(data.message);
     populateCatDropdown();
     toast('💾 บันทึกการตั้งค่าแล้ว');
   }catch(e){toast('❌ '+e.message,'error');}
@@ -983,22 +997,4 @@ function toast(msg,type){
   setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
-(async function init(){
-  const url=getScriptUrl();
-  document.getElementById('api-banner').classList.toggle('show',!url);
-  if(url){
-    try{
-      const r=await api('getSettings');
-      _categories=r.categories||[];
-      _loaded.settings=true;
-      populateCatDropdown();
-    }catch(e){ console.warn('init settings failed:',e.message); }
-  }
-  addVariantRow();
-})();
-</script>
-</body>
-</html>
+// ═══════════════
