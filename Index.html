@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Godmami SKU Generator</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --pink: #e91e8c; --pink-light: #fce4f3; --pink-mid: #f48fbf; --pink-dark: #ad1457;
+  --bg: #fdf6fa; --surface: #ffffff; --border: #f0d0e4; --border-strong: #e0a0cc;
+  --text: #2d1b25; --text-2: #6b4060; --text-3: #9e6882;
+  --radius: 10px; --radius-lg: 14px;
+}
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; height: 56px; gap: 4px; position: sticky; top: 0; z-index: 100; }
+.nav-brand { font-size: 15px; font-weight: 600; color: var(--pink-dark); margin-right: 20px; flex-shrink: 0; }
+.nav-brand span { color: var(--pink); }
+.nav-tab { padding: 6px 14px; border-radius: 8px; border: none; background: none; cursor: pointer; font-size: 13.5px; color: var(--text-2); font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.nav-tab:hover { background: var(--pink-light); color: var(--pink-dark); }
+.nav-tab.active { background: var(--pink-light); color: var(--pink-dark); font-weight: 600; }
+
+.page { display: none; max-width: 860px; margin: 0 auto; padding: 28px 24px 60px; }
+.page.active { display: block; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+.card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius); font-size: 14px; background: var(--surface);
+  color: var(--text); outline: none; transition: border 0.15s; font-family: inherit;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--pink); }
+.field .hint { font-size: 11.5px; color: var(--text-3); margin-top: 5px; }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+.btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit; transition: all 0.15s; }
+.btn-primary { background: var(--pink); color: white; }
+.btn-primary:hover { background: var(--pink-dark); }
+.btn-secondary { background: var(--pink-light); color: var(--pink-dark); border: 1px solid var(--border-strong); }
+.btn-secondary:hover { background: #f8c5e3; }
+.btn-danger { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+.btn-danger:hover { background: #fdd; }
+.btn-sm { padding: 6px 12px; font-size: 12.5px; }
+.btn-xs { padding: 4px 10px; font-size: 12px; }
+
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.badge-pink { background: var(--pink-light); color: var(--pink-dark); }
+.badge-green { background: #e8f5e9; color: #2e7d32; }
+.badge-orange { background: #fff3e0; color: #e65100; }
+
+.sku-preview { background: var(--pink-light); border: 1.5px dashed var(--pink-mid); border-radius: var(--radius); padding: 14px 16px; margin: 14px 0 0; }
+.sku-preview .label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+.bc-table { width: 100%; border-collapse: collapse; }
+.bc-table th { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; padding: 0 12px 10px; border-bottom: 2px solid var(--border-strong); text-align: left; }
+.bc-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.bc-table tr:last-child td { border-bottom: none; }
+.bc-table tr:hover td { background: #fdf0f8; }
+.bc-num { font-family: 'Courier New', monospace; font-size: 13px; font-weight: 600; }
+
+.settings-row { display: grid; grid-template-columns: 40px 1fr 120px 90px 60px; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-row input { border: 1px solid var(--border-strong); border-radius: 6px; padding: 6px 9px; font-size: 13px; width: 100%; font-family: inherit; outline: none; }
+.settings-row input:focus { border-color: var(--pink); }
+.prefix-input { font-family: 'Courier New', monospace !important; font-weight: 700 !important; font-size: 14px !important; color: var(--pink-dark) !important; text-align: center; }
+.sub-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--pink-light); color: var(--pink-dark); border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 600; margin: 2px; }
+.sub-chip .rm { cursor: pointer; font-size: 14px; line-height: 1; color: var(--pink); }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(45,27,37,0.55); z-index: 999; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; max-width: 540px; width: 92%; box-shadow: 0 8px 32px rgba(233,30,140,0.18); max-height: 88vh; overflow-y: auto; }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--pink-dark); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+.page-header p { font-size: 13.5px; color: var(--text-2); margin-top: 4px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.stat-card .sl { font-size: 11.5px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+.stat-card .sv { font-size: 26px; font-weight: 700; color: var(--pink-dark); }
+
+.empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 14px; }
+.empty .big { font-size: 32px; margin-bottom: 10px; }
+
+.loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--text-3); font-size: 14px; }
+.spinner { width: 22px; height: 22px; border: 2.5px solid var(--border-strong); border-top-color: var(--pink); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: #2d1b25; color: white; padding: 12px 18px; border-radius: 10px; font-size: 13.5px; z-index: 9999; opacity: 0; transition: opacity 0.2s; pointer-events: none; max-width: 320px; }
+.toast.show { opacity: 1; }
+.toast.error { background: #c0392b; }
+
+.api-banner { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #5d4037; display: none; }
+.api-banner.show { display: flex; align-items: center; gap: 12px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Godmami <span>SKU</span></div>
+  <button class="nav-tab active" onclick="showPage('input')">➕ สร้าง SKU</button>
+  <button class="nav-tab" onclick="showPage('list')">📋 รายการ SKU</button>
+  <button class="nav-tab" onclick="showPage('barcodes')">🔢 Barcode Pool</button>
+  <button class="nav-tab" onclick="showPage('settings')">⚙️ ตั้งค่า</button>
+</nav>
+
+<!-- API NOT CONFIGURED BANNER -->
+<div class="api-banner" id="api-banner">
+  <span style="font-size:22px;">⚙️</span>
+  <div>
+    <strong>ยังไม่ได้ตั้งค่า SCRIPT_URL</strong> — แอปทำงานได้ แต่ข้อมูลจะไม่บันทึกลง Google Sheets
+    ไปที่หน้า <strong>⚙️ ตั้งค่า</strong> แล้ววาง Web App URL เพื่อเชื่อมต่อ
+  </div>
+</div>
+
+<!-- PAGE: INPUT -->
+<div class="page active" id="page-input">
+  <div class="page-header"><h1>สร้าง SKU Code ใหม่</h1><p>ข้อมูลทั้งหมดบันทึกลง Google Sheets โดยตรง</p></div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>ข้อมูลสินค้า</div>
+    <div class="field">
+      <label>ชื่อสินค้า (Product Name)</label>
+      <input type="text" id="inp-name" placeholder="เช่น Mild First Water Based Nail Polish Halloween Collection 2026" oninput="onNameInput()" />
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>ประเภทสินค้า (Category)</label>
+        <select id="inp-cat" onchange="onCatChange()"><option value="">-- เลือกประเภท --</option></select>
+        <div class="hint">Prefix และ Running จะถูกกำหนดตามประเภท</div>
+      </div>
+      <div class="field">
+        <label>SKU หลัก (Running)</label>
+        <input type="text" id="inp-seq" readonly style="background:#f9f3f7; font-family:'Courier New',monospace; font-weight:700; color:var(--pink-dark); font-size:15px;" />
+        <div class="hint">จองไว้ก่อน บันทึกเมื่อ confirm ทุก variant แล้ว</div>
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <label style="font-size:12.5px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.4px;">Variants (Sub-code)</label>
+        <button class="btn btn-secondary btn-sm" onclick="addVariantRow()">+ เพิ่ม Variant</button>
+      </div>
+      <div id="variant-list"></div>
+      <div class="hint" style="margin-top:6px;">เว้นว่างได้ถ้าไม่มี Sub-code — บาร์โค้ดจัดสรรแยกต่างหากแต่ละ variant</div>
+    </div>
+    <div id="variant-preview" style="background:var(--pink-light); border-radius:var(--radius); padding:14px 16px; margin:14px 0 0; display:none;">
+      <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Preview SKU Codes</div>
+      <div id="variant-preview-list"></div>
+    </div>
+    <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--border);">
+      <div class="card-title" style="margin-bottom:14px;"><span class="dot"></span>ราคา <span style="font-weight:400; font-size:12px; color:var(--text-3);">(ผูกกับสินค้าหลัก — ใช้ร่วมกันทุก variant)</span></div>
+      <div class="row-4">
+        <div class="field">
+          <label>ราคา MRP</label>
+          <input type="number" id="inp-mrp" placeholder="0.00" min="0" step="0.01" style="font-family:'Courier New',monospace; font-weight:600;" />
+        </div>
+        <div class="field">
+          <label>ราคา RRP</label>
+          <input type="number" id="inp-rrp" placeholder="0.00" min="0" step="0.01" style="font-family:'Courier New',monospace; font-weight:600;" />
+        </div>
+        <div class="field">
+          <label>ราคา RRP (Central)</label>
+          <input type="number" id="inp-rrp-central" placeholder="0.00" min="0" step="0.01" style="font-family:'Courier New',monospace; font-weight:600;" />
+        </div>
+        <div class="field">
+          <label>ราคา RRP (ห้างอื่น)</label>
+          <input type="number" id="inp-rrp-other" placeholder="0.00" min="0" step="0.01" style="font-family:'Courier New',monospace; font-weight:600;" />
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-save" onclick="saveSKU()">💾 บันทึกและสร้าง SKU</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 ล้างฟอร์ม</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: SKU LIST -->
+<div class="page" id="page-list">
+  <div class="page-header"><h1>รายการ SKU ทั้งหมด</h1><p>ดึงข้อมูลจาก Google Sheets แบบ real-time</p></div>
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <div class="card-title" style="margin-bottom:0;"><span class="dot"></span>SKU ทั้งหมด</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input type="text" id="search-sku" placeholder="🔍 ค้นหา..." onkeyup="renderSKUList()" style="width:180px; padding:6px 10px; border:1px solid var(--border-strong); border-radius:8px; font-size:13px;" />
+        <button class="btn btn-secondary btn-sm" onclick="loadSKUs()">🔄 Refresh</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+      </div>
+    </div>
+    <div id="sku-list-body"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
+  </div>
+</div>
+
+<!-- PAGE: BARCODE POOL -->
+<div class="page" id="page-barcodes">
+  <div class="page-header"><h1>Barcode Pool</h1><p>บาร์โค้ดสำรองสำหรับจัดสรรให้สินค้าใหม่ — เลือกจากบนลงล่าง</p></div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>เพิ่มบาร์โค้ด</div>
+    <div class="row">
+      <div class="field">
+        <label>เลขบาร์โค้ด</label>
+        <input type="text" id="bc-input" placeholder="เช่น 8851234567890" />
+      </div>
+      <div class="field">
+        <label>ชื่อไฟล์ <span style="font-weight:400;color:var(--text-3)">(อ้างอิง)</span></label>
+        <input type="text" id="bc-filename" placeholder="เช่น barcode_001.png" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Google Drive Share Link</label>
+      <input type="text" id="bc-drive-url" placeholder="https://drive.google.com/file/d/FILE_ID/view?usp=sharing" />
+      <div class="hint">ตั้งค่า Drive เป็น "Anyone with the link can view" ด้วยนะคะ</div>
+    </div>
+    <button class="btn btn-primary" onclick="addBarcode()">➕ เพิ่มบาร์โค้ด</button>
+  </div>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+      <div class="card-title" style="margin-bottom:0;"><span class="dot"></span>รายการบาร์โค้ด</div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span id="bc-stats" class="badge badge-green">-</span>
+        <button class="btn btn-secondary btn-xs" onclick="filterBarcodes('all')" id="f-all">ทั้งหมด</button>
+        <button class="btn btn-secondary btn-xs" onclick="filterBarcodes('free')" id="f-free">ว่างอยู่</button>
+        <button class="btn btn-secondary btn-xs" onclick="filterBarcodes('used')" id="f-used">ใช้แล้ว</button>
+        <button class="btn btn-secondary btn-xs" onclick="loadBarcodes()">🔄</button>
+      </div>
+    </div>
+    <table class="bc-table">
+      <thead><tr><th>#</th><th>เลขบาร์โค้ด</th><th>ชื่อไฟล์</th><th>ภาพ</th><th>สถานะ</th><th>SKU</th><th></th></tr></thead>
+      <tbody id="bc-table-body"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="page-header"><h1>ตั้งค่า</h1></div>
+
+  <!-- API Config card -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>เชื่อมต่อ Google Sheets</div>
+    <div class="field">
+      <label>Apps Script Web App URL</label>
+      <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+      <div class="hint">Deploy แล้ว copy URL มาวางตรงนี้ — บันทึกไว้ใน browser นี้เครื่องนี้</div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveScriptUrl()">💾 บันทึก URL</button>
+      <button class="btn btn-secondary" onclick="testConnection()">🔌 ทดสอบการเชื่อมต่อ</button>
+      <button class="btn btn-secondary" onclick="initSheets()">🗂 สร้าง Sheet Tabs</button>
+    </div>
+    <div id="conn-status" style="margin-top:12px; font-size:13px;"></div>
+  </div>
+
+  <!-- Categories card -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <div class="card-title" style="margin-bottom:0;"><span class="dot"></span>หมวดหมู่สินค้า</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="addCategory()">➕ เพิ่มหมวด</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 บันทึก</button>
+      </div>
+    </div>
+    <div id="settings-body"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>โครงสร้าง SKU Code</div>
+    <div style="background:var(--pink-light); border-radius:var(--radius); padding:20px 16px;">
+      <div style="font-family:'Courier New',monospace; font-size:22px; font-weight:800; letter-spacing:3px; text-align:center; margin-bottom:16px; color:var(--pink-dark);">SK001-01</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:360px; margin:0 auto; text-align:center;">
+        <div style="background:white; border-radius:8px; padding:8px 4px;"><div style="font-family:'Courier New',monospace; font-size:16px; font-weight:800; color:var(--pink-dark);">SK</div><div style="font-size:11px; color:var(--text-2); margin-top:2px;">Prefix</div></div>
+        <div style="background:white; border-radius:8px; padding:8px 4px;"><div style="font-family:'Courier New',monospace; font-size:16px; font-weight:800; color:var(--pink-dark);">001</div><div style="font-size:11px; color:var(--text-2); margin-top:2px;">Running No.<br>(แยกต่อหมวด)</div></div>
+        <div style="background:white; border-radius:8px; padding:8px 4px;"><div style="font-family:'Courier New',monospace; font-size:16px; font-weight:800; color:var(--pink-dark);">01</div><div style="font-size:11px; color:var(--text-2); margin-top:2px;">Sub-code<br>(ถ้ามี)</div></div>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-3); margin-top:12px;">ไม่มี Sub-code → <strong>SK001</strong> &nbsp;|&nbsp; มี Sub-code → <strong>SK001-01</strong></p>
+  </div>
+</div>
+
+<!-- MODAL: SKU Created -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-title"><span>🎉</span>สร้าง SKU สำเร็จ!</div>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+      <div style="font-size:14px; font-weight:600; color:var(--text);" id="modal-product-name">-</div>
+      <span class="badge badge-pink" id="modal-cat-badge">-</span>
+      <span style="font-family:'Courier New',monospace; font-size:12px; background:var(--pink-light); color:var(--pink-dark); padding:2px 8px; border-radius:20px; font-weight:700;" id="modal-seq-badge">-</span>
+    </div>
+    <div id="modal-price-grid"></div>
+    <div id="modal-batch-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-sm" onclick="openAllDriveDownloads()">📥 โหลดภาพทั้งหมด</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyAllSKUs()">📋 คัดลอกทุก SKU</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">✖ ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Barcode Shortage -->
+<div class="modal-bg" id="shortage-modal-bg">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title"><span>⚠️</span>บาร์โค้ดใน Pool ไม่พอ</div>
+    <div style="background:#fff8e1; border:1px solid #ffe082; border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
+      <div style="font-size:14px; font-weight:600; color:#e65100;" id="shortage-msg">-</div>
+    </div>
+    <p style="font-size:13.5px; color:var(--text-2); margin-bottom:18px; line-height:1.7;">กรุณาไปที่หน้า <strong>Barcode Pool</strong> แล้วเพิ่มบาร์โค้ดพร้อม Google Drive Link ก่อนนะคะ</p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="goToBarcodePool()">🔢 ไปหน้า Barcode Pool</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('shortage-modal-bg').classList.remove('open')">✖ ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Duplicate Check -->
+<div class="modal-bg" id="dup-modal-bg">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title"><span>🔍</span>พบสินค้าชื่อใกล้เคียง</div>
+    <p style="font-size:13.5px; color:var(--text-2); margin-bottom:16px;" id="dup-modal-desc">-</p>
+    <div id="dup-modal-list" style="margin-bottom:18px;"></div>
+    <div style="background:var(--pink-light); border-radius:var(--radius); padding:12px 14px; margin-bottom:18px; font-size:13px; color:var(--text-2);">
+      ต้องการ <strong>ใช้รหัสหลักเดิม</strong> และเพิ่มแค่ Sub-code ใหม่ไหม?<br>
+      <span style="font-size:12px; color:var(--text-3);">หรือเลือก "สร้างรหัสใหม่" เพื่อได้ running number ถัดไป</span>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="dupUseExisting()">✅ ใช้รหัสหลักเดิม</button>
+      <button class="btn btn-secondary" onclick="dupCreateNew()">➕ สร้างรหัสใหม่</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('dup-modal-bg').classList.remove('open')">✖ ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — เก็บ SCRIPT_URL ใน localStorage ของ browser
+// ═══════════════════════════════════════════════════════
+function getScriptUrl() { return localStorage.getItem('gm_script_url') || ''; }
+function setScriptUrl(url) { localStorage.setItem('gm_script_url', url); }
+
+// ═══════════════════════════════════════════════════════
+// API LAYER
+// ═══════════════════════════════════════════════════════
+async function api(action, body = {}) {
+  const url = getScriptUrl();
+  if (!url) throw new Error('SCRIPT_URL not set');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...body })
+  });
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message);
+  return data;
+}
+
+// ═══════════════════════════════════════════════════════
+// IN-MEMORY CACHE (refresh on page switch)
+// ═══════════════════════════════════════════════════════
+let _skus = [];
+let _barcodes = [];
+let _categories = [];
+let _loaded = { skus: false, barcodes: false, settings: false };
+
+async function loadSKUs() {
+  setLoading('sku-list-body', 5);
+  try {
+    const r = await api('getSkus');
+    _skus = r.rows || [];
+    _loaded.skus = true;
+    renderSKUList();
+  } catch(e) { showError('sku-list-body', e.message, 5); }
+}
+
+async function loadBarcodes() {
+  setTbodyLoading('bc-table-body', 7);
+  try {
+    const r = await api('getBarcodes');
+    _barcodes = r.rows || [];
+    _loaded.barcodes = true;
+    renderBarcodePool();
+  } catch(e) { setTbodyError('bc-table-body', e.message, 7); }
+}
+
+async function loadSettings() {
+  document.getElementById('settings-body').innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลด...</div>';
+  try {
+    const r = await api('getSettings');
+    _categories = r.categories || [];
+    _loaded.settings = true;
+    renderSettings();
+    populateCatDropdown();
+  } catch(e) {
+    document.getElementById('settings-body').innerHTML = `<div class="empty"><div class="big">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'list')     loadSKUs();
+  if (id === 'barcodes') loadBarcodes();
+  if (id === 'settings') { renderSettingsUrl(); loadSettings(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// INPUT PAGE
+// ═══════════════════════════════════════════════════════
+let variantRows = [];
+let dupSelectedSeq = '';
+let dupSelectedCatId = '';
+
+function onCatChange() { updateSeq(); updateVariantPreviews(); }
+
+function updateSeq() {
+  const catId = document.getElementById('inp-cat').value;
+  const cat = _categories.find(c => c.id === catId);
+  const next = cat ? String(Number(cat.running) + 1).padStart(3,'0') : '';
+  document.getElementById('inp-seq').value = cat ? cat.prefix + next : '';
+  updateVariantPreviews();
+}
+
+function addVariantRow(subVal) {
+  const id = Date.now() + Math.random();
+  variantRows.push(id);
+  const div = document.createElement('div');
+  div.id = 'vrow-' + id;
+  div.style.cssText = 'display:grid; grid-template-columns:1fr 36px; gap:8px; margin-bottom:8px; align-items:center;';
+  div.innerHTML = `
+    <input type="text" placeholder="Sub-code เช่น PL, PN, 01, RED (เว้นว่างได้)"
+      oninput="updateVariantPreviews()" value="${subVal||''}"
+      style="padding:9px 12px; border:1px solid var(--border-strong); border-radius:var(--radius); font-size:14px; font-family:'Courier New',monospace; font-weight:600; color:var(--text);" />
+    <button onclick="removeVariantRow(${id})" style="width:36px;height:36px;border:1px solid #f5c6c6;border-radius:8px;background:#fff0f0;color:#c0392b;cursor:pointer;font-size:16px;">×</button>`;
+  document.getElementById('variant-list').appendChild(div);
+  updateVariantPreviews();
+}
+
+function removeVariantRow(id) {
+  variantRows = variantRows.filter(r => r !== id);
+  const el = document.getElementById('vrow-' + id);
+  if (el) el.remove();
+  updateVariantPreviews();
+}
+
+function getVariantInputs() {
+  return variantRows.map(id => {
+    const el = document.getElementById('vrow-' + id);
+    return el ? el.querySelector('input').value.trim() : null;
+  }).filter(v => v !== null);
+}
+
+function updateVariantPreviews() {
+  const catId = document.getElementById('inp-cat').value;
+  const cat = _categories.find(c => c.id === catId);
+  const preview = document.getElementById('variant-preview');
+  if (!cat || variantRows.length === 0) { preview.style.display='none'; return; }
+  const seq = (dupSelectedSeq && dupSelectedCatId === catId)
+    ? dupSelectedSeq
+    : String(Number(cat.running)+1).padStart(3,'0');
+  const subs = getVariantInputs();
+  preview.style.display = 'block';
+  const isReuse = dupSelectedSeq && dupSelectedCatId === catId;
+  document.getElementById('variant-preview-list').innerHTML = subs.map(sub => {
+    let sku = cat.prefix + seq;
+    if (sub) sku += '-' + sub;
+    return `<div style="font-family:'Courier New',monospace;font-size:17px;font-weight:700;color:var(--pink-dark);padding:3px 0;">
+      ${sku}${isReuse ? ' <span style="font-size:11px;color:var(--text-3);font-family:sans-serif;font-weight:400;">← รหัสหลักเดิม</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function populateCatDropdown() {
+  const sel = document.getElementById('inp-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกประเภท --</option>';
+  _categories.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id; o.textContent = c.name + ' (' + c.prefix + ')';
+    if (c.id === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+  updateSeq();
+}
+
+// ── Duplicate detection ────────────────────────────────
+let nameCheckTimer = null;
+function onNameInput() {
+  clearTimeout(nameCheckTimer);
+  nameCheckTimer = setTimeout(checkDuplicates, 600);
+}
+
+function tokenize(s) { return s.toLowerCase().replace(/[^a-z0-9ก-๙\s]/g,'').split(/\s+/).filter(Boolean); }
+function similarityScore(a,b) {
+  const ta = new Set(tokenize(a)), tb = new Set(tokenize(b));
+  if (!ta.size||!tb.size) return 0;
+  let n=0; ta.forEach(t=>{if(tb.has(t))n++;});
+  return n/Math.max(ta.size,tb.size);
+}
+
+function checkDuplicates() {
+  const name = document.getElementById('inp-name').value.trim();
+  const catId = document.getElementById('inp-cat').value;
+  if (name.length < 4) return;
+  const seen = new Set();
+  const matches = _skus
+    .filter(s => { const k=s.catId+s.seq; if(seen.has(k)) return false; seen.add(k); return true; })
+    .map(s => ({ s, score: similarityScore(name, s.name) }))
+    .filter(x => x.score >= 0.5 && (!catId || x.s.catId === catId))
+    .sort((a,b) => b.score-a.score).slice(0,3).map(x=>x.s);
+  if (matches.length) showDupModal(name, matches);
+}
+
+function showDupModal(name, matches) {
+  document.getElementById('dup-modal-desc').textContent = `ค้นหา "${name}" พบสินค้าชื่อใกล้เคียง ${matches.length} รายการ`;
+  document.getElementById('dup-modal-list').innerHTML = matches.map(s => {
+    const variants = _skus.filter(x=>x.catId===s.catId&&x.seq===s.seq)
+      .map(x=>`<span class="sub-chip" style="cursor:default;">${x.sku}</span>`).join('');
+    return `<div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:13.5px;font-weight:600;">${s.name}</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:2px;">${s.catName} · ${s.date}</div>
+        </div>
+        <span style="font-family:'Courier New',monospace;font-size:13px;font-weight:700;color:var(--pink-dark);background:var(--pink-light);padding:3px 10px;border-radius:20px;">${s.catId+s.seq}</span>
+      </div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+        <span style="font-size:11px;color:var(--text-3);">SKU ที่มี:</span>${variants}
+      </div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%;"
+        onclick="selectExistingSeq('${s.catId}','${s.seq}')">ใช้รหัส ${s.catId+s.seq}</button>
+    </div>`;
+  }).join('');
+  document.getElementById('dup-modal-bg').classList.add('open');
+}
+
+function selectExistingSeq(catId, seq) {
+  dupSelectedSeq = seq;
+  dupSelectedCatId = catId;
+  const cat = _categories.find(c=>c.id===catId);
+  if (cat) { document.getElementById('inp-cat').value = catId; document.getElementById('inp-seq').value = cat.prefix+seq; updateVariantPreviews(); }
+  toast('เลือกรหัส '+catId+seq+' แล้ว');
+}
+function dupUseExisting() {
+  if (!dupSelectedSeq) { toast('กรุณาเลือกรหัสหลักก่อน'); return; }
+  document.getElementById('dup-modal-bg').classList.remove('open');
+  toast('✅ ใช้รหัสหลักเดิม — เพิ่ม Sub-code ใหม่ได้เลย');
+}
+function dupCreateNew() {
+  dupSelectedSeq=''; dupSelectedCatId='';
+  document.getElementById('dup-modal-bg').classList.remove('open');
+  updateSeq(); toast('สร้างรหัสใหม่');
+}
+
+// ── Save SKU ───────────────────────────────────────────
+async function saveSKU() {
+  const name  = document.getElementById('inp-name').value.trim();
+  const catId = document.getElementById('inp-cat').value;
+  if (!name)   { toast('กรุณากรอกชื่อสินค้า','error'); return; }
+  if (!catId)  { toast('กรุณาเลือกประเภทสินค้า','error'); return; }
+  if (!getScriptUrl()) { toast('ยังไม่ได้ตั้งค่า Script URL — ไปที่ ⚙️ ตั้งค่า ก่อนค่ะ','error'); return; }
+
+  const subs = getVariantInputs();
+  if (subs.length===0) { toast('กรุณาเพิ่ม Variant อย่างน้อย 1 รายการ','error'); return; }
+
+  // check barcode pool
+  const freeBCs = _barcodes.filter(b=>!b.used);
+  if (freeBCs.length < subs.length) {
+    const msg = freeBCs.length===0
+      ? `บาร์โค้ดหมดแล้ว! ต้องการ ${subs.length} แต่ Pool เหลือ 0`
+      : `บาร์โค้ดไม่พอ — ต้องการ ${subs.length} แต่ว่างอยู่แค่ ${freeBCs.length}`;
+    document.getElementById('shortage-msg').textContent = msg;
+    document.getElementById('shortage-modal-bg').classList.add('open');
+    return;
+  }
+
+  const catIdx = _categories.findIndex(c=>c.id===catId);
+  let seq;
+  if (dupSelectedSeq && dupSelectedCatId===catId) {
+    seq = dupSelectedSeq;
+    dupSelectedSeq=''; dupSelectedCatId='';
+  } else {
+    _categories[catIdx].running = Number(_categories[catIdx].running)+1;
+    seq = String(_categories[catIdx].running).padStart(3,'0');
+  }
+
+  const cat = _categories[catIdx];
+  const priceMRP    = parseFloat(document.getElementById('inp-mrp').value)||0;
+  const priceRRP    = parseFloat(document.getElementById('inp-rrp').value)||0;
+  const priceRRPCen = parseFloat(document.getElementById('inp-rrp-central').value)||0;
+  const priceRRPOth = parseFloat(document.getElementById('inp-rrp-other').value)||0;
+  const date = new Date().toLocaleDateString('th-TH');
+
+  const rows = [];
+  const usedBCs = [];
+
+  subs.forEach((sub,i) => {
+    let sku = cat.prefix+seq;
+    if (sub) sku+='-'+sub;
+    const bc = freeBCs[i];
+    rows.push({
+      id: Date.now().toString()+i,
+      sku, name, catId, catName: cat.name, sub, seq,
+      barcode: bc.number,
+      bcViewUrl: bc.driveViewUrl||'',
+      bcDownloadUrl: bc.driveDownloadUrl||'',
+      bcFilename: bc.filename||'',
+      priceMRP, priceRRP, priceRRPCen, priceRRPOth, date
+    });
+    usedBCs.push({ id: bc.id, sku });
+  });
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
+
+  try {
+    await api('appendSkus', { rows });
+    // mark barcodes as used
+    await Promise.all(usedBCs.map(b => api('updateBarcode', { id: b.id, fields: { used: true, sku: b.sku } })));
+
+    // update local cache
+    rows.forEach(r => _skus.push(r));
+    usedBCs.forEach(b => { const bc=_barcodes.find(x=>x.id===b.id); if(bc){bc.used=true;bc.sku=b.sku;} });
+
+    showBatchModal(rows);
+    clearForm();
+  } catch(e) {
+    // rollback running in memory
+    if (!dupSelectedSeq) _categories[catIdx].running--;
+    toast('❌ บันทึกไม่สำเร็จ: '+e.message,'error');
+  } finally {
+    btn.disabled=false; btn.textContent='💾 บันทึกและสร้าง SKU';
+  }
+}
+
+function clearForm() {
+  ['inp-name','inp-cat','inp-seq','inp-mrp','inp-rrp','inp-rrp-central','inp-rrp-other']
+    .forEach(id => document.getElementById(id).value='');
+  document.getElementById('variant-preview').style.display='none';
+  variantRows=[]; document.getElementById('variant-list').innerHTML='';
+  addVariantRow();
+}
+
+// ── Batch Modal ────────────────────────────────────────
+let currentRecords=[];
+function showBatchModal(records) {
+  currentRecords=records;
+  const info=records[0];
+  document.getElementById('modal-product-name').textContent=info.name;
+  document.getElementById('modal-cat-badge').textContent=info.catName;
+  document.getElementById('modal-seq-badge').textContent=info.catId+info.seq;
+
+  const fmt=v=>(v&&v>0)?'฿'+Number(v).toLocaleString():'—';
+  document.getElementById('modal-price-grid').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+      ${[['MRP',info.priceMRP],['RRP',info.priceRRP],['RRP Central',info.priceRRPCen],['RRP ห้างอื่น',info.priceRRPOth]]
+        .map(([l,v])=>`<div style="background:var(--bg);border-radius:8px;padding:9px 6px;text-align:center;">
+          <div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">${l}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--pink-dark);">${fmt(v)}</div>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('modal-batch-body').innerHTML=records.map(rec=>`
+    <div style="background:var(--bg);border-radius:var(--radius);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-family:'Courier New',monospace;font-size:20px;font-weight:800;color:var(--pink-dark);">${rec.sku}</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:2px;">Barcode: ${rec.barcode}${rec.bcFilename?' · '+rec.bcFilename:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-xs" onclick="navigator.clipboard.writeText('${rec.sku}').then(()=>toast('คัดลอก ${rec.sku}'))">📋</button>
+          ${rec.bcViewUrl?`<a href="${rec.bcViewUrl}" target="_blank" class="btn btn-secondary btn-xs">👁 ดู</a>`:''}
+          ${rec.bcDownloadUrl?`<a href="${rec.bcDownloadUrl}" target="_blank" class="btn btn-primary btn-xs">📥 โหลด</a>`:'<span style="font-size:11px;color:var(--text-3);">ไม่มีไฟล์</span>'}
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-bg').classList.remove('open'); }
+function copyAllSKUs(){ navigator.clipboard.writeText(currentRecords.map(r=>r.sku).join('\n')).then(()=>toast('คัดลอก '+currentRecords.length+' SKU แล้ว')); }
+function openAllDriveDownloads(){
+  const w=currentRecords.filter(r=>r.bcDownloadUrl);
+  if(!w.length){toast('ไม่มีไฟล์ภาพ');return;}
+  w.forEach((r,i)=>setTimeout(()=>window.open(r.bcDownloadUrl,'_blank'),i*300));
+}
+
+// ═══════════════════════════════════════════════════════
+// SKU LIST PAGE
+// ═══════════════════════════════════════════════════════
+function renderSKUList() {
+  const q=(document.getElementById('search-sku').value||'').toLowerCase();
+  const filtered=[..._skus].reverse().filter(s=>
+    s.sku?.toLowerCase().includes(q)||s.name?.toLowerCase().includes(q)||s.catName?.toLowerCase().includes(q));
+
+  const cats={};
+  _skus.forEach(s=>{cats[s.catName]=(cats[s.catName]||0)+1;});
+  const top=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="sl">SKU ทั้งหมด</div><div class="sv">${_skus.length}</div></div>
+    <div class="stat-card"><div class="sl">หมวดหมู่</div><div class="sv">${_categories.length}</div></div>
+    <div class="stat-card"><div class="sl">หมวดยอดนิยม</div><div class="sv" style="font-size:16px;">${top?top[0]:'—'}</div></div>`;
+
+  const body=document.getElementById('sku-list-body');
+  if(!filtered.length){body.innerHTML='<div class="empty"><div class="big">📭</div>ไม่พบข้อมูล</div>';return;}
+
+  const fmt=v=>(v&&v>0)?'฿'+Number(v).toLocaleString():'—';
+  body.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 90px 140px 90px 90px 80px 80px;gap:8px;align-items:center;padding:0 0 10px;border-bottom:2px solid var(--border-strong);">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">ชื่อ / SKU</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">ประเภท</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">Barcode</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">MRP</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">RRP</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;">วันที่</div>
+      <div></div>
+    </div>`+
+  filtered.map(s=>`
+    <div style="display:grid;grid-template-columns:1fr 90px 140px 90px 90px 80px 80px;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:13.5px;font-weight:600;">${s.name}</div>
+        <div style="font-family:'Courier New',monospace;font-size:12px;color:var(--pink-dark);font-weight:700;margin-top:2px;">${s.sku}</div>
+      </div>
+      <div><span class="badge badge-pink">${s.catName||'—'}</span></div>
+      <div class="bc-num" style="font-size:11.5px;">${s.barcode||'—'}</div>
+      <div style="font-size:12px;color:var(--text-2);">${fmt(s.priceMRP)}</div>
+      <div style="font-size:12px;color:var(--text-2);">${fmt(s.priceRRP)}</div>
+      <div style="font-size:12px;color:var(--text-2);">${s.date||'—'}</div>
+      <div style="display:flex;gap:6px;">
+        ${s.bcViewUrl?`<a href="${s.bcViewUrl}" target="_blank" class="btn btn-secondary btn-xs">📊</a>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function exportCSV() {
+  if (!_skus.length){toast('ไม่มีข้อมูล');return;}
+  const header='SKU Code,ชื่อสินค้า,ประเภท,Sub-code,MRP,RRP,RRP Central,RRP ห้างอื่น,Barcode,วันที่';
+  const rows=_skus.map(s=>[s.sku,s.name,s.catName,s.sub||'',s.priceMRP||0,s.priceRRP||0,s.priceRRPCen||0,s.priceRRPOth||0,s.barcode,s.date].join(','));
+  const blob=new Blob([header+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='GodmamiSKU.csv';a.click();
+}
+
+// ═══════════════════════════════════════════════════════
+// BARCODE POOL PAGE
+// ═══════════════════════════════════════════════════════
+let bcFilter='all';
+
+function parseDriveUrl(url) {
+  if (!url) return {viewUrl:'',downloadUrl:''};
+  const m=url.match(/\/file\/d\/([^\/\?&]+)/);
+  if (!m) return {viewUrl:url,downloadUrl:url};
+  const id=m[1];
+  return { viewUrl:`https://drive.google.com/file/d/${id}/view`, downloadUrl:`https://drive.google.com/uc?export=download&id=${id}` };
+}
+
+async function addBarcode() {
+  const number=document.getElementById('bc-input').value.trim();
+  const filename=document.getElementById('bc-filename').value.trim();
+  const shareUrl=document.getElementById('bc-drive-url').value.trim();
+  if(!number){toast('กรุณากรอกเลขบาร์โค้ด','error');return;}
+  const drive=parseDriveUrl(shareUrl);
+  const row={
+    id: Date.now().toString(),
+    number, filename,
+    driveShareUrl: shareUrl,
+    driveViewUrl: drive.viewUrl,
+    driveDownloadUrl: drive.downloadUrl,
+    used: false, sku:''
+  };
+  try {
+    await api('addBarcode',{row});
+    _barcodes.push(row);
+    document.getElementById('bc-input').value='';
+    document.getElementById('bc-filename').value='';
+    document.getElementById('bc-drive-url').value='';
+    renderBarcodePool();
+    toast('เพิ่มบาร์โค้ดแล้ว');
+  } catch(e){toast('❌ '+e.message,'error');}
+}
+
+function filterBarcodes(f){
+  bcFilter=f;
+  ['all','free','used'].forEach(x=>{document.getElementById('f-'+x).style.background=x===f?'var(--pink-light)':'';});
+  renderBarcodePool();
+}
+
+function renderBarcodePool(){
+  const free=_barcodes.filter(b=>!b.used);
+  document.getElementById('bc-stats').textContent=`ว่าง ${free.length} / ทั้งหมด ${_barcodes.length}`;
+  const filtered=_barcodes.filter(b=>bcFilter==='all'?true:bcFilter==='free'?!b.used:b.used);
+  const tbody=document.getElementById('bc-table-body');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="big">🔢</div>ยังไม่มีบาร์โค้ด</div></td></tr>`;return;}
+  tbody.innerHTML=filtered.map((b)=>{
+    const hasFile=!!b.driveViewUrl;
+    const imgBtns=hasFile
+      ?`<a href="${b.driveViewUrl}" target="_blank" class="btn btn-secondary btn-xs">👁 ดู</a>
+        <a href="${b.driveDownloadUrl}" target="_blank" class="btn btn-secondary btn-xs">📥 โหลด</a>`
+      :'<span style="font-size:11px;color:var(--text-3);">ยังไม่มีภาพ</span>';
+    return `<tr>
+      <td style="color:var(--text-3);font-size:12px;">${_barcodes.indexOf(b)+1}</td>
+      <td class="bc-num">${b.number}</td>
+      <td style="font-size:12px;color:var(--text-2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.filename||'—'}</td>
+      <td style="white-space:nowrap;">${imgBtns}</td>
+      <td>${b.used?'<span style="color:#999;font-size:12px;">✅ ใช้แล้ว</span>':'<span style="color:#2e7d32;font-weight:600;font-size:12px;">🟢 ว่างอยู่</span>'}</td>
+      <td style="font-size:12px;color:var(--text-2);">${b.sku||'—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-secondary btn-xs" onclick="editBCUrl('${b.id}')">✏️</button>
+        ${!b.used?`<button class="btn btn-danger btn-xs" onclick="deleteBC('${b.id}')">🗑</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function editBCUrl(id){
+  const bc=_barcodes.find(b=>b.id===id);
+  if(!bc)return;
+  const newUrl=prompt('แก้ไข Google Drive Link:',bc.driveShareUrl||'');
+  if(newUrl===null)return;
+  const newName=prompt('แก้ไขชื่อไฟล์:',bc.filename||'');
+  if(newName===null)return;
+  const drive=parseDriveUrl(newUrl.trim());
+  const fields={driveShareUrl:newUrl.trim(),driveViewUrl:drive.viewUrl,driveDownloadUrl:drive.downloadUrl,filename:newName.trim()};
+  try{
+    await api('updateBarcode',{id,fields});
+    Object.assign(bc,fields);
+    renderBarcodePool();toast('อัพเดตแล้ว');
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+
+async function deleteBC(id){
+  if(!confirm('ลบบาร์โค้ดนี้?'))return;
+  try{
+    await api('deleteBarcode',{id});
+    _barcodes=_barcodes.filter(b=>b.id!==id);
+    renderBarcodePool();toast('ลบแล้ว');
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS PAGE
+// ═══════════════════════════════════════════════════════
+function renderSettingsUrl(){
+  const el=document.getElementById('script-url-input');
+  if(el) el.value=getScriptUrl();
+  document.getElementById('api-banner').classList.toggle('show',!getScriptUrl());
+}
+
+function saveScriptUrl(){
+  const val=document.getElementById('script-url-input').value.trim();
+  setScriptUrl(val);
+  document.getElementById('api-banner').classList.toggle('show',!val);
+  toast('บันทึก URL แล้ว');
+  if(val) loadSettings();
+}
+
+async function testConnection(){
+  const url=getScriptUrl();
+  if(!url){toast('กรุณาใส่ URL ก่อน','error');return;}
+  const el=document.getElementById('conn-status');
+  el.textContent='⏳ กำลังทดสอบ...';el.style.color='';
+  try{
+    const r=await api('getSettings');
+    el.textContent='✅ เชื่อมต่อสำเร็จ — พบ '+((r.categories||[]).length)+' หมวดหมู่';
+    el.style.color='#2e7d32';
+  }catch(e){
+    el.textContent='❌ เชื่อมต่อไม่ได้: '+e.message;
+    el.style.color='#c0392b';
+  }
+}
+
+async function initSheets(){
+  try{
+    await api('init');
+    toast('🗂 สร้าง Sheet Tabs สำเร็จ');
+    await loadSettings();
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+
+function renderSettings(){
+  const body=document.getElementById('settings-body');
+  if(!_categories.length){body.innerHTML='<div class="empty"><div class="big">📋</div>ยังไม่มีหมวดหมู่</div>';return;}
+  body.innerHTML=_categories.map((c,i)=>`
+    <div class="settings-row" data-idx="${i}">
+      <div style="font-size:12px;color:var(--text-3);">${i+1}</div>
+      <div><input type="text" value="${c.name}" data-field="name" placeholder="ชื่อหมวด" /></div>
+      <div><input type="text" class="prefix-input" value="${c.prefix}" data-field="prefix" maxlength="4" /></div>
+      <div><span class="badge badge-pink" style="font-family:'Courier New',monospace;">${String(c.running||0).padStart(3,'0')}</span></div>
+      <div><button class="btn btn-danger btn-xs" onclick="removeCategory(${i})">🗑</button></div>
+    </div>
+    <div style="padding:8px 0 14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text-3);">Sub-codes:</span>
+      <div id="subs-${i}" style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${(c.subs||[]).map(s=>`<span class="sub-chip">${s}<span class="rm" onclick="removeSub(${i},'${s}')">×</span></span>`).join('')}
+      </div>
+      <input type="text" id="sub-inp-${i}" placeholder="เพิ่ม..." maxlength="4"
+        style="border:1px solid var(--border-strong);border-radius:6px;padding:3px 8px;font-size:12px;width:80px;" />
+      <button class="btn btn-secondary btn-xs" onclick="addSub(${i})">+</button>
+    </div>`).join('');
+}
+
+function addSub(idx){
+  const v=document.getElementById('sub-inp-'+idx).value.trim();
+  if(!v)return;
+  if(!_categories[idx].subs)_categories[idx].subs=[];
+  if(_categories[idx].subs.includes(v)){toast('Sub-code ซ้ำ');return;}
+  _categories[idx].subs.push(v);
+  renderSettings();
+}
+function removeSub(idx,sub){
+  _categories[idx].subs=(_categories[idx].subs||[]).filter(s=>s!==sub);
+  renderSettings();
+}
+function addCategory(){
+  _categories.push({id:'NEW'+Date.now(),name:'New Category',prefix:'NC',running:0,subs:[]});
+  renderSettings();
+}
+function removeCategory(idx){
+  if(!confirm('ลบหมวดนี้?'))return;
+  _categories.splice(idx,1);
+  renderSettings();toast('ลบหมวดแล้ว');
+}
+
+async function saveSettings(){
+  document.querySelectorAll('.settings-row[data-idx]').forEach(row=>{
+    const idx=parseInt(row.dataset.idx);
+    const n=row.querySelector('[data-field="name"]');
+    const p=row.querySelector('[data-field="prefix"]');
+    if(n)_categories[idx].name=n.value.trim()||_categories[idx].name;
+    if(p){_categories[idx].prefix=p.value.trim().toUpperCase()||_categories[idx].prefix; _categories[idx].id=_categories[idx].prefix;}
+  });
+  try{
+    await api('saveSettings',{categories:_categories});
+    populateCatDropdown();
+    toast('💾 บันทึกการตั้งค่าแล้ว');
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// SHORTAGE / HELPERS
+// ═══════════════════════════════════════════════════════
+function goToBarcodePool(){
+  document.getElementById('shortage-modal-bg').classList.remove('open');
+  showPage('barcodes');
+}
+
+function setLoading(id,cols){
+  document.getElementById(id).innerHTML=`<div class="loading"><div class="spinner"></div>กำลังโหลดจาก Google Sheets...</div>`;
+}
+function showError(id,msg,cols){
+  document.getElementById(id).innerHTML=`<div class="empty"><div class="big">⚠️</div>${msg}</div>`;
+}
+function setTbodyLoading(id,cols){
+  document.getElementById(id).innerHTML=`<tr><td colspan="${cols}"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></td></tr>`;
+}
+function setTbodyError(id,msg,cols){
+  document.getElementById(id).innerHTML=`<tr><td colspan="${cols}"><div class="empty"><div class="big">⚠️</div>${msg}</div></td></tr>`;
+}
+
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast'+(type==='error'?' error':'');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(async function init(){
+  const url=getScriptUrl();
+  document.getElementById('api-banner').classList.toggle('show',!url);
+  if(url){
+    try{
+      const r=await api('getSettings');
+      _categories=r.categories||[];
+      _loaded.settings=true;
+      populateCatDropdown();
+    }catch(e){ console.warn('init settings failed:',e.message); }
+  }
+  addVariantRow();
+})();
+</script>
+</body>
+</html>
