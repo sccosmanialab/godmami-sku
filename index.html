@@ -637,9 +637,9 @@ async function saveSKU() {
   btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
 
   try {
-    await api('appendSkus', { rows });
+    await api('appendSkus', { rows: JSON.stringify(rows) });
     // mark barcodes as used
-    await Promise.all(usedBCs.map(b => api('updateBarcode', { id: b.id, fields: { used: true, sku: b.sku } })));
+    await Promise.all(usedBCs.map(b => api('updateBarcode', { id: b.id, fields: JSON.stringify({ used: true, sku: b.sku }) })));
 
     // update local cache
     rows.forEach(r => _skus.push(r));
@@ -790,7 +790,7 @@ async function addBarcode() {
     used: false, sku:''
   };
   try {
-    await api('addBarcode',{row});
+    await api('addBarcode',{row: JSON.stringify(row)});
     _barcodes.push(row);
     document.getElementById('bc-input').value='';
     document.getElementById('bc-filename').value='';
@@ -843,7 +843,7 @@ async function editBCUrl(id){
   const drive=parseDriveUrl(newUrl.trim());
   const fields={driveShareUrl:newUrl.trim(),driveViewUrl:drive.viewUrl,driveDownloadUrl:drive.downloadUrl,filename:newName.trim()};
   try{
-    await api('updateBarcode',{id,fields});
+    await api('updateBarcode',{id, fields: JSON.stringify(fields)});
     Object.assign(bc,fields);
     renderBarcodePool();toast('อัพเดตแล้ว');
   }catch(e){toast('❌ '+e.message,'error');}
