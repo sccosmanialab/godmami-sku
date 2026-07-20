@@ -535,7 +535,7 @@ function checkDuplicates() {
   const matches = _skus
     .filter(s => { const k=s.catId+s.seq; if(seen.has(k)) return false; seen.add(k); return true; })
     .map(s => ({ s, score: similarityScore(name, s.name) }))
-    .filter(x => x.score >= 0.2 && (!catId || x.s.catId === catId))
+    .filter(x => x.score >= 0.4 && (!catId || x.s.catId === catId))
     .sort((a,b) => b.score-a.score).slice(0,3).map(x=>x.s);
   if (matches.length) showDupModal(name, matches);
 }
