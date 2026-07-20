@@ -354,12 +354,18 @@ function setScriptUrl(url) { localStorage.setItem('gm_script_url', url); }
 async function api(action, body = {}) {
   const url = getScriptUrl();
   if (!url) throw new Error('SCRIPT_URL not set');
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...body })
+
+  // Build GET params — stringify objects/arrays so Apps Script can parse
+  const params = new URLSearchParams({ action });
+  Object.entries(body).forEach(([k, v]) => {
+    params.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
   });
-  const data = await res.json();
+
+  const res = await fetch(url + '?' + params.toString());
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e) { throw new Error('Response parse error: ' + text.substring(0,200)); }
   if (data.status === 'error') throw new Error(data.message);
   return data;
 }
